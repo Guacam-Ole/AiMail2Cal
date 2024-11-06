@@ -26,7 +26,8 @@ namespace AiMailScanner
                 var calEvent = new CalDav.Event
                 {
                     Start = summary.ElementDate,
-                    End = summary.ElementDate.AddHours(1),
+                    IsAllDay = summary.ElementDate.Hour == 0,
+
                     Summary = summary.Subject,
                     Description = summary.Body,
                     Created = DateTime.Now,
@@ -34,10 +35,16 @@ namespace AiMailScanner
                     Organizer = new CalDav.Contact { Name = "AiMailScanner" }
                 };
 
+                if (!calEvent.IsAllDay)
+                {
+                    calEvent.End = summary.ElementDate.AddMinutes(5);
+                }
                 if (summary.Contact != null)
                 {
                     calEvent.Attendees = [new CalDav.Contact { Name = summary.Contact.Name, Email = summary.Contact.ToString() }];
                 }
+
+                calendar.Save(calEvent);
 
                 _logger.LogInformation("Created new appointment on '{AppointmentDate}' with subject '{Subject}'", summary.ElementDate, summary.Subject);
             }

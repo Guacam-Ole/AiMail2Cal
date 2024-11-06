@@ -11,6 +11,7 @@ internal class Program
 
     private static async Task Main(string[] args)
     {
+        Console.WriteLine("Application just Started");
         var config = Newtonsoft.Json.JsonConvert.DeserializeObject<Config>(File.ReadAllText("secrets.json")) ?? throw new Exception("Cannot read config");
         var services = new ServiceCollection();
         ConfigureServices(services, config);

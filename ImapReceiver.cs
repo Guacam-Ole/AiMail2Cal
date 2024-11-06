@@ -37,8 +37,8 @@ namespace AiMailScanner
                     throw;
                 }
 
-                var uids = client.Inbox.Search(SearchQuery.SentSince(DateTime.Now.AddDays(-7)));
-                var unprocessedUids = lastProcessedMailId == null ? uids : uids.Where(q => q.Id <= lastProcessedMailId);
+                var uids = client.Inbox.Search(SearchQuery.SentSince(DateTime.Now.AddDays(-1)));
+                var unprocessedUids = lastProcessedMailId == null ? uids : uids.Where(q => q.Id > lastProcessedMailId);
                 if (!unprocessedUids.Any()) return lastProcessedMailId;
 
                 _logger.LogInformation("Retrieved '{Count}' new emails to process", unprocessedUids.Count());
@@ -47,8 +47,6 @@ namespace AiMailScanner
                 {
                     try
                     {
-                        if (lastProcessedMailId != null && uid.Id <= lastProcessedMailId) continue;
-
                         var message = client.Inbox.GetMessage(uid);
                         var body = message.HtmlBody;
                         if (string.IsNullOrWhiteSpace(body)) body = message.TextBody;
@@ -60,6 +58,7 @@ namespace AiMailScanner
                             summary.Contact = from;
                             _sender.AddToCalendarIfNotExisting(summary);
                         }
+                        Thread.Sleep(TimeSpan.FromSeconds(10));
                     }
                     catch (Exception ex)
                     {
