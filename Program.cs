@@ -20,7 +20,7 @@ internal class Program
         while (true)
         {
             _lastReadId = await imapReceiver.ReceiveUnCheckedEmails(_lastReadId);
-            Thread.Sleep(new TimeSpan(0, 10, 0));
+            Thread.Sleep(new TimeSpan(0, 0, 30));
         }
     }
 

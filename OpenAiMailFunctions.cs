@@ -37,7 +37,7 @@ namespace AiMailScanner
             }
         }
 
-        public async Task<Summary?> GetMarkdownSummaryFromEmailContent(string subject, string emailContent)
+        public async Task<Summary?> GetSummaryFromEmailContent(string subject, string emailContent)
         {
             try
             {
