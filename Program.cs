@@ -7,14 +7,13 @@ using NLog.Extensions.Logging;
 
 internal class Program
 {
-    private static Config _config;
-    private static MailKit.UniqueId? _lastReadId = null;
+    private static uint? _lastReadId = null;
 
     private static async Task Main(string[] args)
     {
-        _config = Newtonsoft.Json.JsonConvert.DeserializeObject<Config>(File.ReadAllText("secrets.json")) ?? throw new Exception("Cannot read config");
+        var config = Newtonsoft.Json.JsonConvert.DeserializeObject<Config>(File.ReadAllText("secrets.json")) ?? throw new Exception("Cannot read config");
         var services = new ServiceCollection();
-        ConfigureServices(services);
+        ConfigureServices(services, config);
 
         using ServiceProvider serviceProvider = services.BuildServiceProvider();
         var imapReceiver = serviceProvider.GetService<ImapReceiver>() ?? throw new Exception("Failed building services");
@@ -25,15 +24,15 @@ internal class Program
         }
     }
 
-    private static void ConfigureServices(ServiceCollection services)
+    private static void ConfigureServices(ServiceCollection services, Config config)
     {
         services.AddScoped<OpenAiMailFunctions>();
         services.AddScoped<DavSender>();
         services.AddScoped<ImapReceiver>();
-        IServiceCollection serviceCollection = services.AddSingleton<Config>(_config);
+        IServiceCollection serviceCollection = services.AddSingleton(config);
         services.AddLogging(builder =>
         {
-            builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Information);
+            builder.SetMinimumLevel(LogLevel.Information);
             builder.AddNLog("nlog.config");
         });
     }

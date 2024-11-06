@@ -1,8 +1,8 @@
-﻿using MailKit.Search;
-using MailKit;
-
-using System.Text;
+﻿using MailKit;
 using MailKit.Net.Imap;
+using MailKit.Search;
+
+using Microsoft.Extensions.Logging;
 
 namespace AiMailScanner
 {
@@ -11,67 +11,65 @@ namespace AiMailScanner
         private readonly Config _config;
         private readonly OpenAiMailFunctions _openAiMailFunctions;
         private readonly DavSender _sender;
+        private readonly ILogger<ImapReceiver> _logger;
 
-        public ImapReceiver(Config config, OpenAiMailFunctions openAiMailFunctions, DavSender sender)
+        public ImapReceiver(Config config, OpenAiMailFunctions openAiMailFunctions, DavSender sender, ILogger<ImapReceiver> logger)
         {
             _config = config;
             _openAiMailFunctions = openAiMailFunctions;
             _sender = sender;
+            _logger = logger;
         }
 
-        public async Task<UniqueId?> ReceiveUnCheckedEmails(UniqueId? lastProcessedMailId)
+        public async Task<uint?> ReceiveUnCheckedEmails(uint? lastProcessedMailId)
         {
-           //UniqueId? lastReadId = null;
-            using (ImapClient client = new ImapClient())
+            using (var client = new ImapClient())
             {
-                client.Connect(_config.ImapConfig.Url, _config.ImapConfig.Port, true);
-                client.Authenticate(_config.ImapConfig.UserName, _config.ImapConfig.Password);
-
-                client.Inbox.Open(FolderAccess.ReadOnly);
+                try
+                {
+                    client.Connect(_config.ImapConfig.Url, _config.ImapConfig.Port, true);
+                    client.Authenticate(_config.ImapConfig.UserName, _config.ImapConfig.Password);
+                    client.Inbox.Open(FolderAccess.ReadOnly);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Cannot connect to Imap server. Check Credentials and configuration. Program will stop");
+                    throw;
+                }
 
                 var uids = client.Inbox.Search(SearchQuery.SentSince(DateTime.Now.AddDays(-2)));
 
                 foreach (var uid in uids)
                 {
-                    if (lastProcessedMailId != null && uid <= lastProcessedMailId) continue;
-
-                    var message = client.Inbox.GetMessage(uid);
-                    var body = message.HtmlBody;
-                    if (string.IsNullOrWhiteSpace(body)) body = message.TextBody;
-                    var summary = await _openAiMailFunctions.GetMarkdownSummaryFromEmailContent(message.Subject, body);
-                    if (summary != null)
+                    try
                     {
-                        var from = message.From.First();
+                        if (lastProcessedMailId != null && uid.Id <= lastProcessedMailId) continue;
 
-                        summary.Subject = message.Subject;
-                        summary.From = from.Name ?? from.ToString();
-                        _sender.AddToCalendarIfNotExisting(summary);
+                        var message = client.Inbox.GetMessage(uid);
+                        var body = message.HtmlBody;
+                        if (string.IsNullOrWhiteSpace(body)) body = message.TextBody;
+                        var summary = await _openAiMailFunctions.GetMarkdownSummaryFromEmailContent(message.Subject, body);
+                        if (summary != null)
+                        {
+                            var from = message.From.First();
+
+                            summary.Subject = message.Subject;
+                            summary.Contact = from;
+                            _sender.AddToCalendarIfNotExisting(summary);
+                        }
                     }
-                    lastProcessedMailId = uid;
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed reading email with id '{uid}' from imapserver. Will discard that mail and continue with next one.", uid);
+                    }
+                    finally
+                    {
+                        lastProcessedMailId = uid.Id;
+                    }
                 }
             }
 
             return lastProcessedMailId;
-
-            //uint lastId = 0;
-            //using var imapClient = new ImapClient(_config.ImapConfig.Url, _config.ImapConfig.Port, _config.ImapConfig.UserName, _config.ImapConfig.Password, AuthMethod.Login, true);
-            //var inbox = imapClient.GetMailboxInfo(imapClient.DefaultMailbox);
-
-            //var newMails = imapClient.Search(lastProcessedMailId == null ? SearchCondition.SentSince(DateTime.Today.AddDays(-1)) : SearchCondition.GreaterThan(lastProcessedMailId.Value));
-            //var messages = imapClient.GetMessages(newMails);
-
-            //foreach (var message in messages)
-            //{
-            //    var htmlView = message.AlternateViews.FirstOrDefault(q => q.ContentType.MediaType == "text/html");
-            //    string emailContent = htmlView == null ? message.Body : Encoding.UTF8.GetString(((MemoryStream)htmlView.ContentStream).ToArray());
-
-            //    var summary = await _openAiMailFunctions.GetMarkdownSummaryFromEmailContent(message.Subject, emailContent);
-            //    if (summary != null)
-            //    {
-            //        summary.Subject = $"{message.Sender}:{message.Subject}";
-            //        _sender.AddToCalendarIfNotExisting(summary);
-            //    }
-            //}
         }
     }
 }
