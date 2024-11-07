@@ -1,6 +1,7 @@
 ﻿using CalCli;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Win32.SafeHandles;
 
 namespace AiMailScanner
 {
@@ -15,30 +16,33 @@ namespace AiMailScanner
             _logger = logger;
         }
 
-        public void AddToCalendarIfNotExisting(Summary summary)
+        public void AddToCalendarIfNotExisting(EmailContents summary)
         {
             try
             {
+                if (summary.StartDate.Year == 1900) return;
+
                 var davConnection = new BasicConnection(_config.CalDavConfig.UserName, _config.CalDavConfig.Password);
                 var davServer = new CalDav.Client.Server(_config.CalDavConfig.Url, davConnection);
                 var calendars = davServer.GetCalendars();
                 var calendar = _config.CalDavConfig.Calendar == null ? calendars.First() : calendars.First(q => q.Name == _config.CalDavConfig.Calendar);
                 var calEvent = new CalDav.Event
                 {
-                    Start = summary.ElementDate,
-                    IsAllDay = summary.ElementDate.Hour == 0,
+                    Start = summary.StartDate,
 
                     Summary = summary.Subject,
-                    Description = summary.Body,
+                    Description = summary.Summary,
                     Created = DateTime.Now,
                     Categories = { "OpenAI", "FromMail" },
-                    Organizer = new CalDav.Contact { Name = "AiMailScanner" }
+                    Organizer = new CalDav.Contact { Name = "AiMailScanner" },
+                    Location = summary.Location
                 };
-
-                if (!calEvent.IsAllDay)
+                if (summary.EndDate > summary.StartDate)
                 {
-                    calEvent.End = summary.ElementDate.AddMinutes(5);
+                    calEvent.End = summary.EndDate;
                 }
+                calEvent.IsAllDay = summary.StartDate.Hour == 0 && calEvent.End != null;
+
                 if (summary.Contact != null)
                 {
                     calEvent.Attendees = [new CalDav.Contact { Name = summary.Contact.Name, Email = summary.Contact.ToString() }];
@@ -46,7 +50,7 @@ namespace AiMailScanner
 
                 calendar.Save(calEvent);
 
-                _logger.LogInformation("Created new appointment on '{AppointmentDate}' with subject '{Subject}'", summary.ElementDate, summary.Subject);
+                _logger.LogInformation("Created new appointment on '{AppointmentDate}' with subject '{Subject}'", summary.StartDate, summary.Subject);
             }
             catch (Exception ex)
             {

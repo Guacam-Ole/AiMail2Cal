@@ -9,7 +9,7 @@ internal class Program
 {
     private static uint? _lastReadId = null;
 
-    private static async Task Main(string[] args)
+    private static async Task Main()
     {
         Console.WriteLine("Application just Started");
         var config = Newtonsoft.Json.JsonConvert.DeserializeObject<Config>(File.ReadAllText("secrets.json")) ?? throw new Exception("Cannot read config");
