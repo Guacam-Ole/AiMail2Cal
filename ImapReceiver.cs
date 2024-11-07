@@ -53,7 +53,7 @@ namespace AiMailScanner
                         var summary = await _openAiMailFunctions.GetSummaryFromEmailContent(message.Subject, body);
                         if (summary != null)
                         {
-                            var from = message.From.First();
+                            var from = message.From.First().ToString();
                             summary.Subject = message.Subject;
                             summary.Contact = from;
                             _sender.AddToCalendarIfNotExisting(summary);

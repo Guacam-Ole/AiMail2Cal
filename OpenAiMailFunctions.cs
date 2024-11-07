@@ -71,7 +71,7 @@ namespace AiMailScanner
                         Messages = [
                             ChatMessage.FromSystem("You analyze emails if they contain contents that could be used for an appointment for a calendar entry."),
                             ChatMessage.FromSystem("Try to retrieve a StartDate, EndDate, Location and create a summary of the content that should not be longer than 200 characters. The summary should be in German"),
-                            ChatMessage.FromSystem("Store all dates in Iso format. If a Date is missing respond with 1.1.1900 instead"),
+                            ChatMessage.FromSystem("Store all dates in Iso format. If a Date is missing respond with the first day of 1900 instead"),
 
                             ChatMessage.FromUser(
                             [
@@ -123,11 +123,6 @@ namespace AiMailScanner
                         return null;
                     }
 
-                    if (result.StartDate.Year == 1900)
-                    {
-                        _logger.LogInformation("OpenAi detected no valid date for '{Subject}'. Most likely no date in that mail. Will not create an appointment.", subject);
-                        return null;
-                    }
                     if (result.StartDate < DateTime.Now.AddHours(4))
                     {
                         _logger.LogInformation("OpenAi retrieved the date '{possibleDate}' for '{subject}' but it is in the past or very close by. Will not store it", result.StartDate, subject);

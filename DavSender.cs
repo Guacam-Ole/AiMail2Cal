@@ -45,7 +45,7 @@ namespace AiMailScanner
 
                 if (summary.Contact != null)
                 {
-                    calEvent.Attendees = [new CalDav.Contact { Name = summary.Contact.Name, Email = summary.Contact.ToString() }];
+                    calEvent.Attendees = [new CalDav.Contact { Name = summary.Contact, Email = summary.Contact }];
                 }
 
                 calendar.Save(calEvent);
