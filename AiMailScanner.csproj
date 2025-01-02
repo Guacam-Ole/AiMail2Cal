@@ -25,11 +25,10 @@
     <PackageReference Include="Betalgo.OpenAI" Version="8.7.2" />
     <PackageReference Include="Betalgo.OpenAI.Utilities" Version="8.1.0" />
     <PackageReference Include="CalCli" Version="1.1.2" />
-    <PackageReference Include="MailKit" Version="4.8.0" />
+    <PackageReference Include="MailKit" Version="4.9.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="NLog" Version="5.3.4" />
     <PackageReference Include="NLog.Extensions.Logging" Version="5.3.14" />
-    <PackageReference Include="WebDav.Client" Version="2.8.0" />
   </ItemGroup>
 
 </Project>
