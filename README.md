@@ -8,4 +8,4 @@ The bot will add the following information to an appointment if it can be found:
 * Participants
 
 ## Config
-Simply copy secrets.example.json to secrets.json and enter your values. You will need an openAi-Api-Key, Credentials for your Imap server and Credentials for your calDav-Calendar
+Simply copy `secrets.example.json` to `secrets.json` and enter your values. You will need an openAi-Api-Key, Credentials for your Imap server and Credentials for your calDav-Calendar
