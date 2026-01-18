@@ -1,7 +1,6 @@
 ﻿using CalCli;
 
 using Microsoft.Extensions.Logging;
-using Microsoft.Win32.SafeHandles;
 
 namespace AiMailScanner
 {
@@ -29,7 +28,6 @@ namespace AiMailScanner
                 var calEvent = new CalDav.Event
                 {
                     Start = summary.StartDate,
-
                     Summary = summary.Subject,
                     Description = summary.Summary,
                     Created = DateTime.Now,
@@ -48,6 +46,16 @@ namespace AiMailScanner
                     calEvent.Attendees = [new CalDav.Contact { Name = summary.Contact, Email = summary.Contact }];
                 }
 
+                var events = calendar.GetAll().SelectMany(q => q.Events);
+                var existingEvent = events.FirstOrDefault(q =>
+                    q.IsAllDay == calEvent.IsAllDay && q.Start == calEvent.Start && q.End == calEvent.End &&
+                    q.Attendees.Equals(calEvent.Attendees));
+
+                if (existingEvent != null)
+                {
+                    _logger.LogInformation("Duplicate detected. Wont store");
+                }
+                
                 calendar.Save(calEvent);
 
                 _logger.LogInformation("Created new appointment on '{AppointmentDate}' with subject '{Subject}'", summary.StartDate, summary.Subject);
