@@ -45,9 +45,9 @@ namespace AiMailScanner
         {
             try
             {
-                int rateLimitRetriesLeft = 2;
-                bool isRateLimited = false;
-                bool firstAttempt = true;
+                var rateLimitRetriesLeft = 2;
+                var isRateLimited = false;
+                var firstAttempt = true;
 
                 ChatCompletionCreateResponse? detectDateResult = null;
 
@@ -71,6 +71,7 @@ namespace AiMailScanner
                         Messages = [
                             ChatMessage.FromSystem("You analyze emails if they contain contents that could be used for an appointment for a calendar entry."),
                             ChatMessage.FromSystem("Try to retrieve a StartDate, EndDate, Location and create a summary of the content that should not be longer than 200 characters. The summary should be in German"),
+                            ChatMessage.FromSystem("Make sure you only collect useful appointments. For example ignore all emails that contain spam, just inform about a payment date and so on."),
                             ChatMessage.FromSystem("Store all dates in Iso format. If a Date is missing respond with the first day of 1900 instead"),
 
                             ChatMessage.FromUser(
